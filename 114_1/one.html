@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>甲仙國中課表查詢</title>
+
+<style>
+/* ================= 甲仙國中 紫色主題（AA 對比 + RWD） ================= */
+:root{
+  /* Light theme：柔和紫 */
+  --bg:#f9f7fd;           /* very light purple 背景 */
+  --ink:#1f1f29;          /* 主要文字深紫灰 */
+  --brand:#7e3ff2;        /* 品牌紫（主色） */
+  --brand-700:#5b21b6;    /* hover/selected 深紫 */
+  --soft:#ede9fe;         /* 卡片淺紫底 */
+  --line:#d8b4fe;         /* 淡紫邊線 */
+  --focus:#c026d3;        /* 聚焦亮紫（清楚） */
+}
+
+@media (prefers-color-scheme: dark){
+  :root{
+    /* Dark theme */
+    --bg:#0f0a1a;
+    --ink:#eceaf7;
+    --brand:#a78bfa;       /* 深底用亮紫 */
+    --brand-700:#8b5cf6;
+    --soft:#1e1633;
+    --line:#3f2d5c;
+    --focus:#c084fc;
+  }
+}
+
+/* 使用者強制覆蓋（切換鈕） */
+body.light-mode{
+  --bg:#f9f7fd; --ink:#1f1f29; --brand:#7e3ff2; --brand-700:#5b21b6;
+  --soft:#ede9fe; --line:#d8b4fe; --focus:#c026d3;
+}
+body.dark-mode{
+  --bg:#0f0a1a; --ink:#eceaf7; --brand:#a78bfa; --brand-700:#8b5cf6;
+  --soft:#1e1633; --line:#3f2d5c; --focus:#c084fc;
+}
+
+/* ================= Base ================= */
+html,body{margin:0}
+body{
+  font-family:"Noto Sans TC","Microsoft JhengHei",system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  background:var(--bg); color:var(--ink); line-height:1.6;
+  -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+}
+
+/* ================= Topbar ================= */
+.topbar{
+  position:relative; text-align:center; font-size:14px; padding:6px 0;
+  background:var(--bg); color:var(--ink); user-select:none;
+}
+.topbar a{color:var(--brand); text-decoration:none; margin:0 6px}
+.topbar a:hover{color:var(--brand-700); text-decoration:underline}
+.topbar .date{color:var(--brand-700); font-weight:700}
+.theme-toggle{
+  position:absolute; top:6px; right:10px; background:none; border:1px solid var(--line);
+  border-radius:8px; padding:4px 8px; font-size:14px; line-height:1; cursor:pointer;
+  color:var(--brand); background:var(--soft);
+}
+.theme-toggle:hover{background:var(--brand-700); color:#fff; border-color:var(--brand-700)}
+.theme-toggle:focus-visible{outline:3px solid var(--focus); outline-offset:2px}
+
+/* ================= Tabs ================= */
+.tabs{max-width:1280px; margin:0 auto;}
+.tablist{
+  display:flex; flex-wrap:wrap; list-style:none; padding:0; margin:0; background:var(--bg);
+  border-top:1px solid var(--line); border-bottom:1px solid var(--line);
+}
+.tab{
+  appearance:none; background:var(--soft); color:var(--ink);
+  border:1px solid var(--line); padding:4px 10px; font-size:13px; line-height:1.2;
+  cursor:pointer; user-select:none; margin:0; margin-left:-1px; margin-top:-1px;
+  transition:background .15s ease,color .15s ease,border-color .15s ease;
+}
+.tab:first-child{margin-left:0}
+.tab:focus-visible{outline:3px solid var(--focus); outline-offset:-1px}
+.tab:hover,.tab[aria-selected="true"]{background:var(--brand-700); color:#fff; border-color:var(--brand-700)}
+/* 深色模式覆蓋（未手動鎖定 light 時） */
+body.dark-mode .tab:hover,
+body.dark-mode .tab[aria-selected="true"],
+@media (prefers-color-scheme: dark){
+  body:not(.light-mode) .tab:hover,
+  body:not(.light-mode) .tab[aria-selected="true"]{
+    background:var(--brand); color:#0f0a1a; border-color:var(--brand);
+  }
+}
+
+/* ================= Panels ================= */
+.panels{margin:0; padding:8px;}
+.panel{display:block}
+.panel[hidden]{display:none}
+.panel-inner{
+  background:var(--soft); border:1px solid var(--line); border-radius:12px; padding:8px;
+}
+.panel img{display:block; max-width:100%; height:auto; margin:auto}
+
+/* ================= RWD ================= */
+@media (max-width:640px){
+  .tab{font-size:12px; padding:3px 8px}
+  .panel-inner{padding:6px}
+  .theme-toggle{top:6px; right:8px; font-size:13px}
+}
+</style>
+</head>
+<body>
+
+<!-- 版頭 -->
+<div class="topbar" role="banner">
+  <a href="https://hwjh.ylc.edu.tw/" target="_blank" rel="noopener">甲仙國中</a> 114-1
+  <span class="date">(08.25)</span>
+  <a href="https://github.com/" target="_blank" rel="noopener">後臺</a><span aria-hidden="true">｜</span>
+  <button id="themeToggle" class="theme-toggle" type="button" aria-label="切換深淺色" aria-pressed="false">🌙</button>
+</div>
+
+<!-- Tabs 主體 -->
+<div class="tabs" id="scheduleTabs">
+  <!-- 標籤列（全部老師） -->
+  <ul class="tablist" role="tablist" aria-label="課表分類">
+    <li><button class="tab" role="tab" id="tab-tea-001" aria-controls="panel-tea-001" aria-selected="false" tabindex="-1">101</button></li>
+    <li><button class="tab" role="tab" id="tab-tea-002" aria-controls="panel-tea-002" aria-selected="false" tabindex="-1">201</button></li>
+    <li><button class="tab" role="tab" id="tab-tea-003" aria-controls="panel-tea-003" aria-selected="false" tabindex="-1">301</button></li>
+    <li><button class="tab" role="tab" id="tab-tea-004" aria-controls="panel-tea-004" aria-selected="false" tabindex="-1">林順成</button></li>
+    <li><button class="tab" role="tab" id="tab-tea-005" aria-controls="panel-tea-005" aria-selected="false" tabindex="-1">謝郁慧</button></li>
+    <li><button class="tab" role="tab" id="tab-tea-006" aria-controls="panel-tea-006" aria-selected="false" tabindex="-1">張鈞棨</button></li>
+    <li><button class="tab" role="tab" id="tab-tea-007" aria-controls="panel-tea-007" aria-selected="false" tabindex="-1">郭文旺</button></li>
+    <li><button class="tab" role="tab" id="tab-tea-008" aria-controls="panel-tea-008" aria-selected="false" tabindex="-1">張尹馨</button></li>
+    <li><button class="tab" role="tab" id="tab-tea-009" aria-controls="panel-tea-009" aria-selected="false" tabindex="-1">吳莨淯</button></li>
+    <li><button class="tab" role="tab" id="tab-tea-010" aria-controls="panel-tea-010" aria-selected="false" tabindex="-1">專輔</button></li>
+    <li><button class="tab" role="tab" id="tab-tea-011" aria-controls="panel-tea-011" aria-selected="false" tabindex="-1">顏良宇</button></li>
+    <li><button class="tab" role="tab" id="tab-tea-012" aria-controls="panel-tea-012" aria-selected="false" tabindex="-1">賴睿超</button></li>
+    <li><button class="tab" role="tab" id="tab-tea-013" aria-controls="panel-tea-013" aria-selected="false" tabindex="-1">呂志鴻</button></li>
+    <li><button class="tab" role="tab" id="tab-tea-014" aria-controls="panel-tea-014" aria-selected="false" tabindex="-1">黃淑芳</button></li>
+    <li><button class="tab" role="tab" id="tab-tea-015" aria-controls="panel-tea-015" aria-selected="false" tabindex="-1">蕭子喬</button></li>
+    <li><button class="tab" role="tab" id="tab-tea-016" aria-controls="panel-tea-016" aria-selected="false" tabindex="-1">資源班總表</button></li>
+  </ul>
+
+  <!-- 內容區（與上面 1:1 對應） -->
+  <div class="panels">
+    <div class="panel" role="tabpanel" id="panel-tea-001" aria-labelledby="tab-tea-001" hidden><div class="panel-inner"><img src="all/02.png" alt="課表 101"></div></div>
+    <div class="panel" role="tabpanel" id="panel-tea-002" aria-labelledby="tab-tea-002" hidden><div class="panel-inner"><img src="all/03.png" alt="課表 201"></div></div>
+    <div class="panel" role="tabpanel" id="panel-tea-003" aria-labelledby="tab-tea-003" hidden><div class="panel-inner"><img src="all/01.png" alt="課表 301"></div></div>
+    <div class="panel" role="tabpanel" id="panel-tea-004" aria-labelledby="tab-tea-004" hidden><div class="panel-inner"><img src="all/04.png" alt="課表 林順成"></div></div>
+    <div class="panel" role="tabpanel" id="panel-tea-005" aria-labelledby="tab-tea-005" hidden><div class="panel-inner"><img src="all/05.png" alt="課表 謝郁慧"></div></div>
+    <div class="panel" role="tabpanel" id="panel-tea-006" aria-labelledby="tab-tea-006" hidden><div class="panel-inner"><img src="all/06.png" alt="課表 張鈞棨"></div></div>
+    <div class="panel" role="tabpanel" id="panel-tea-007" aria-labelledby="tab-tea-007" hidden><div class="panel-inner"><img src="all/07.png" alt="課表 郭文旺"></div></div>
+    <div class="panel" role="tabpanel" id="panel-tea-008" aria-labelledby="tab-tea-008" hidden><div class="panel-inner"><img src="all/08.png" alt="課表 張尹馨"></div></div>
+    <div class="panel" role="tabpanel" id="panel-tea-009" aria-labelledby="tab-tea-009" hidden><div class="panel-inner"><img src="all/09.png" alt="課表 吳莨淯"></div></div>
+    <div class="panel" role="tabpanel" id="panel-tea-010" aria-labelledby="tab-tea-010" hidden><div class="panel-inner"><img src="all/10.png" alt="課表 專輔"></div></div>
+    <div class="panel" role="tabpanel" id="panel-tea-011" aria-labelledby="tab-tea-011" hidden><div class="panel-inner"><img src="all/11.png" alt="課表 顏良宇"></div></div>
+    <div class="panel" role="tabpanel" id="panel-tea-012" aria-labelledby="tab-tea-012" hidden><div class="panel-inner"><img src="all/12.png" alt="課表 賴睿超"></div></div>
+    <div class="panel" role="tabpanel" id="panel-tea-013" aria-labelledby="tab-tea-013" hidden><div class="panel-inner"><img src="all/13.png" alt="課表 呂志鴻"></div></div>
+    <div class="panel" role="tabpanel" id="panel-tea-014" aria-labelledby="tab-tea-014" hidden><div class="panel-inner"><img src="all/14.png" alt="課表 黃淑芳"></div></div>
+    <div class="panel" role="tabpanel" id="panel-tea-015" aria-labelledby="tab-tea-015" hidden><div class="panel-inner"><img src="all/15.png" alt="課表 蕭子喬"></div></div>
+    <div class="panel" role="tabpanel" id="panel-tea-016" aria-labelledby="tab-tea-016" hidden><div class="panel-inner"><img src="all/16.png" alt="課表 資源班總表"></div></div>
+  </div>
+</div>
+
+<script>
+/* ===== WAI-ARIA Tabs：滑鼠/鍵盤可操作 ===== */
+(function(){
+  const tablist = document.querySelector('[role="tablist"]');
+  const tabs = Array.from(tablist.querySelectorAll('[role="tab"]'));
+  const panels = tabs.map(t => document.getElementById(t.getAttribute('aria-controls')));
+
+  function activateTab(tab){
+    tabs.forEach((t,i)=>{
+      const selected = (t===tab);
+      t.setAttribute('aria-selected', selected);
+      t.tabIndex = selected ? 0 : -1;
+      if (panels[i]) panels[i].hidden = !selected;
+    });
+    tab.focus();
+  }
+
+  tabs.forEach(t => t.addEventListener('click', ()=>activateTab(t)));
+
+  tablist.addEventListener('keydown', e=>{
+    const i = tabs.indexOf(document.activeElement);
+    if(i<0) return;
+    if(e.key==='ArrowRight'){e.preventDefault(); activateTab(tabs[(i+1)%tabs.length]);}
+    else if(e.key==='ArrowLeft'){e.preventDefault(); activateTab(tabs[(i-1+tabs.length)%tabs.length]);}
+    else if(e.key==='Home'){e.preventDefault(); activateTab(tabs[0]);}
+    else if(e.key==='End'){e.preventDefault(); activateTab(tabs[tabs.length-1]);}
+  });
+
+  const firstSelected = tabs.find(t=>t.getAttribute('aria-selected')==='true') || tabs[0];
+  activateTab(firstSelected);
+})();
+
+/* ===== 深/淺色主題切換（localStorage 記憶） ===== */
+(function(){
+  const KEY = 'theme';
+  const btn = document.getElementById('themeToggle');
+
+  const saved = localStorage.getItem(KEY);
+  if(saved === 'light'){ document.body.classList.add('light-mode'); btn.setAttribute('aria-pressed','false'); btn.textContent='🌙'; }
+  else if(saved === 'dark'){ document.body.classList.add('dark-mode'); btn.setAttribute('aria-pressed','true'); btn.textContent='☀️'; }
+  else{
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    btn.textContent = prefersDark ? '☀️' : '🌙';
+    btn.setAttribute('aria-pressed', prefersDark ? 'true' : 'false');
+  }
+
+  btn.addEventListener('click', ()=>{
+    const isDark = document.body.classList.toggle('dark-mode');
+    if(isDark) document.body.classList.remove('light-mode');
+    else document.body.classList.add('light-mode');
+    btn.textContent = isDark ? '☀️' : '🌙';
+    btn.setAttribute('aria-pressed', isDark ? 'true' : 'false');
+    localStorage.setItem(KEY, isDark ? 'dark' : 'light');
+  });
+
+  const mq = window.matchMedia('(prefers-color-scheme: dark)');
+  const handler = e=>{
+    const overridden = localStorage.getItem(KEY);
+    if(overridden) return;
+    const prefersDark = e.matches;
+    btn.textContent = prefersDark ? '☀️' : '🌙';
+    btn.setAttribute('aria-pressed', prefersDark ? 'true' : 'false');
+  };
+  if(mq.addEventListener){ mq.addEventListener('change', handler); }
+  else if(mq.addListener){ mq.addListener(handler); }
+})();
+</script>
+
+</body>
+</html>
